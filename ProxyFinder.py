@@ -9,7 +9,43 @@ import cssutils
 
 class ProxyFinder():
 	def __init__(self):
-		self.getProxies()
+		self.proxyList = self.getProxies()
+		# print self.proxyList
+
+	def getFastestProxies(self):
+		return self.sortProxyByKey('speed',False)
+
+	def getFastestConnProxies(self):
+		return self.sortProxyByKey('connTime')
+
+	def sortProxyByKey(self,key,bAscending = True):
+		retArray = self.proxyList
+		for i in range(len(retArray)):
+			bContinue = False
+			for x in range( len(retArray) - 1):
+				if(bAscending):
+					if(float(retArray[x][key]) < float(retArray[x + 1][key])):
+						tempFor = retArray [x + 1]
+						tempCur = retArray[x] 
+						retArray[x] = tempFor
+						retArray[x + 1] = tempCur
+						bContinue = True
+					else:
+						continue
+				else:
+					if(float(retArray[x][key]) > float(retArray[x + 1][key])):
+						tempFor = retArray [x + 1]
+						tempCur = retArray[x] 
+						retArray[x] = tempFor
+						retArray[x + 1] = tempCur
+						bContinue = True
+					else:
+						continue					
+			if(bContinue):
+				continue
+			else:
+				break
+		return retArray
 
 	def getProxies(self):
 		proxySource  = 'http://proxylist.hidemyass.com/'
@@ -27,11 +63,25 @@ class ProxyFinder():
 				cols = row.find_all('td')
 				for index,col in enumerate(cols):
 					if(index == 0):
-						proxyObj['updateTime'] = col.get_text()
+						proxyObj['updateTime'] = col.get_text().strip()
 					elif(index == 1):
-						self.extractIP(col)
+						proxyObj['ip'] = self.extractIP(col)
+					elif(index == 2):
+						proxyObj['port'] = col.get_text().strip()
+					elif(index == 3):
+						proxyObj['country'] = col.get_text().strip()
+					elif(index == 4):
+						proxyObj['speed'] = col.div['value']
+					elif(index == 5):
+						proxyObj['connTime'] = col.div['value']
+					elif(index == 6):
+						proxyObj['protocol'] = col.get_text().strip().lower()
+					elif(index == 7):
+						proxyObj['anon'] = col.get_text().strip()
 					else:
 						continue
+				proxyList.append(proxyObj)
+		return proxyList
 
 	def isVisibleElement(self,element,styleSheet):
 		print styleSheet
@@ -68,7 +118,7 @@ class ProxyFinder():
 				else:
 					child.decompose()
 					continue
-		print col.span.get_text()
+		return col.span.get_text().strip()
 
 
 
@@ -105,6 +155,9 @@ class ProxyFinder():
 
 def main():
 	p = ProxyFinder()
+	sortedList = p.getFastestProxies()
+	for proxy in sortedList:
+		print proxy
 
 if __name__ == '__main__':
 	main()
